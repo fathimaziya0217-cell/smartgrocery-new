@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'recipes', ~{::content})}">
+<head>
+    <title>Recipes - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Recipe Management</h2>
+            <p class="text-muted mb-0">Manage household recipes, ingredients, and auto-scaled servings</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRecipeModal">
+                <i class="bi bi-plus-lg me-1"></i> Create Recipe
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card mb-4 p-3 shadow-sm border-0">
+        <form th:action="@{/recipes}" method="get" class="row g-2 align-items-center">
+            <div class="col-md-9">
+                <div class="input-group">
+                    <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" class="form-control" placeholder="Search recipes by name..." th:value="${searchQuery}">
+                </div>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">Search</button>
+                <a th:href="@{/recipes}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Recipes Grid -->
+    <div class="row g-4">
+        <div th:if="${#lists.isEmpty(recipes)}" class="col-12 text-center py-5 text-muted">
+            <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary"></i>
+            No recipes created yet. Click "Create Recipe" above to add your family's favorite dishes!
+        </div>
+
+        <div th:each="rec : ${recipes}" class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold text-success mb-0" th:text="${rec.name}">Chicken Fried Rice</h5>
+                        <form th:action="@{/recipes/delete/{id}(id=${rec.id})}" method="post"
+                              onsubmit="return confirm('Delete this recipe? (Cannot be undone)');">
+                            <button type="submit" class="btn btn-outline-danger btn-sm p-1" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </div>
+
+                    <p class="text-muted small mb-3" th:text="${rec.description}">Flavorful stir-fry meal</p>
+
+                    <div class="d-flex align-items-center small text-muted mb-3">
+                        <span class="me-3"><i class="bi bi-people me-1"></i> <strong th:text="${rec.defaultServings}">2</strong> Default Servings</span>
+                        <span><i class="bi bi-basket me-1"></i> <strong th:text="${#lists.size(rec.ingredients)}">4</strong> Ingredients</span>
+                    </div>
+
+                    <!-- Ingredients preview -->
+                    <div class="p-2 bg-light rounded border mb-3 small">
+                        <div class="fw-semibold text-secondary mb-1">Key Ingredients:</div>
+                        <ul class="mb-0 ps-3">
+                            <li th:each="ing : ${rec.ingredients}" th:text="${ing.groceryItem.name} + ' (' + ${ing.quantityRequired} + ' ' + ${ing.unit} + ')'">
+                                Rice (400 g)
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Instructions Accordion / Collapse -->
+                    <div th:if="${rec.preparationInstructions}" class="mb-3">
+                        <a class="btn btn-link btn-sm p-0 text-success text-decoration-none fw-semibold"
+                           data-bs-toggle="collapse" th:href="'#instr' + ${rec.id}" role="button">
+                            <i class="bi bi-chevron-down me-1"></i> View Instructions
+                        </a>
+                        <div class="collapse mt-2" th:id="'instr' + ${rec.id}">
+                            <div class="card card-body bg-light small text-dark" style="white-space: pre-line;"
+                                 th:text="${rec.preparationInstructions}"></div>
+                        </div>
+                    </div>
+
+                    <!-- Servings Scaler Form Link -->
+                    <div class="border-top pt-2 d-flex justify-content-between align-items-center">
+                        <a th:href="@{/recipes/{id}(id=${rec.id}, servings=${rec.defaultServings * 2})}" class="btn btn-outline-success btn-sm w-100">
+                            <i class="bi bi-calculator me-1"></i> Scale Servings & Ingredients
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scaled Servings Detail View Modal or Panel if requested -->
+    <div th:if="${recipe != null}" class="card mt-4 border-success shadow">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+            <span class="fw-bold fs-5"><i class="bi bi-calculator me-2"></i> Ingredient Scaler for: <span th:text="${recipe.name}"></span></span>
+            <a th:href="@{/recipes}" class="btn btn-outline-light btn-sm">&times; Close</a>
+        </div>
+        <div class="card-body">
+            <form th:action="@{/recipes/{id}(id=${recipe.id})}" method="get" class="row g-3 align-items-center mb-4">
+                <div class="col-auto">
+                    <label class="col-form-label fw-bold">Calculate for Servings:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="number" min="1" max="50" name="servings" class="form-control" th:value="${servings}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Recalculate Ingredients</button>
+                </div>
+            </form>
+
+            <h6 class="fw-bold mb-3 text-secondary">Scaled Ingredient Quantities for <span th:text="${servings}"></span> Servings:</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ingredient Name</th>
+                            <th>Quantity Required</th>
+                            <th>Unit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="scaled : ${scaledIngredients}">
+                            <td class="fw-bold" th:text="${scaled.groceryItemName}">Rice</td>
+                            <td class="text-success fw-bold fs-6" th:text="${scaled.quantityRequired}">400</td>
+                            <td th:text="${scaled.unit}">g</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Recipe Modal -->
+    <div class="modal fade" id="createRecipeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create New Household Recipe</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/recipes/add}" th:object="${recipeDto}" method="post">
+                    <div class="modal-body">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label class="form-label fw-semibold">Recipe Name *</label>
+                                <input type="text" th:field="*{name}" class="form-control" placeholder="e.g. Vegetable Curry" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">Default Servings *</label>
+                                <input type="number" min="1" max="20" th:field="*{defaultServings}" class="form-control" value="2" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <input type="text" th:field="*{description}" class="form-control" placeholder="Short description">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Preparation Instructions</label>
+                            <textarea th:field="*{preparationInstructions}" class="form-control" rows="3"
+                                      placeholder="Step-by-step cooking steps..."></textarea>
+                        </div>
+
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-success mb-0">Ingredients List</h6>
+                            <button type="button" id="addIngredientBtn" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-plus-lg me-1"></i> Add Ingredient
+                            </button>
+                        </div>
+
+                        <!-- Dynamic Ingredient Rows Container -->
+                        <div id="ingredientsContainer">
+                            <div class="ingredient-row row g-2 mb-2 align-items-center">
+                                <div class="col-md-5">
+                                    <select name="ingredients[0].groceryItemId" class="form-select form-select-sm" required>
+                                        <option value="">Select Item from Inventory</option>
+                                        <option th:each="itm : ${userItems}" th:value="${itm.id}"
+                                                th:text="${itm.name} + ' (' + ${itm.category.name} + ')'">Item</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" step="0.01" min="0.01" name="ingredients[0].quantityRequired"
+                                           class="form-control form-control-sm" placeholder="Quantity" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <select name="ingredients[0].unit" class="form-select form-select-sm">
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="litre">litre</option>
+                                        <option value="ml">ml</option>
+                                        <option value="piece">piece</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-1 text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-ingredient-btn" style="display: none;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-semibold px-4">Save Recipe</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

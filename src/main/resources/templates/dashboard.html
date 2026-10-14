@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'dashboard', ~{::content})}">
+<head>
+    <title>Dashboard - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">Household Grocery Dashboard</h2>
+            <p class="text-muted mb-0">Live inventory, meal schedules, and monthly budget overview</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/scanning}" class="btn btn-outline-success">
+                <i class="bi bi-upc-scan me-1"></i> Scan Barcode
+            </a>
+            <a th:href="@{/inventory/add}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add Item
+            </a>
+        </div>
+    </div>
+
+    <!-- Top Metrics Row -->
+    <div class="row g-3 mb-4">
+        <!-- Total Items -->
+        <div class="col-sm-6 col-lg-3">
+            <a th:href="@{/inventory}" class="text-decoration-none">
+                <div class="card stat-card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-green me-3">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold">TOTAL ITEMS</div>
+                            <h4 class="fw-bold mb-0 text-dark" th:text="${stats.totalGroceryItems}">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Inventory Value -->
+        <div class="col-sm-6 col-lg-3">
+            <a th:href="@{/inventory}" class="text-decoration-none">
+                <div class="card stat-card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-green me-3">
+                            <i class="bi bi-currency-rupee"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold">INVENTORY VALUE</div>
+                            <h4 class="fw-bold mb-0 text-dark" th:text="'₹' + ${stats.totalEstimatedInventoryValue}">₹0.00</h4>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Low Stock Items -->
+        <div class="col-sm-6 col-lg-3">
+            <a th:href="@{/reports(nearExpiryDays=7)}" class="text-decoration-none">
+                <div class="card stat-card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-orange me-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold">LOW STOCK ITEMS</div>
+                            <h4 class="fw-bold mb-0 text-dark" th:text="${stats.lowStockCount}">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Expired & Near Expiry -->
+        <div class="col-sm-6 col-lg-3">
+            <a th:href="@{/alerts}" class="text-decoration-none">
+                <div class="card stat-card p-3">
+                    <div class="d-flex align-items-center">
+                        <div class="stat-icon bg-red me-3">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small fw-semibold">EXPIRY ATTENTION</div>
+                            <h4 class="fw-bold mb-0 text-dark" th:text="${stats.nearExpiryCount + stats.expiredCount}">0</h4>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Middle Section: Budget & Shopping Summary -->
+    <div class="row g-4 mb-4">
+        <!-- Monthly Budget Card -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-wallet2 text-success me-2"></i> Monthly Budget Tracking</span>
+                    <a th:href="@{/budgets}" class="btn btn-sm btn-outline-secondary">Manage Budget</a>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-4 border-end">
+                            <div class="text-muted small">Allocated</div>
+                            <h5 class="fw-bold text-dark mt-1" th:text="'₹' + ${stats.monthlyBudget}">₹0</h5>
+                        </div>
+                        <div class="col-4 border-end">
+                            <div class="text-muted small">Spent</div>
+                            <h5 class="fw-bold text-danger mt-1" th:text="'₹' + ${stats.actualSpending}">₹0</h5>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted small">Remaining</div>
+                            <h5 class="fw-bold mt-1"
+                                th:classappend="${stats.remainingBudget.compareTo(T(java.math.BigDecimal).ZERO) < 0} ? 'text-danger' : 'text-success'"
+                                th:text="'₹' + ${stats.remainingBudget}">₹0</h5>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Budget Utilization</span>
+                            <span class="fw-bold" th:text="${stats.budgetUsagePercentage} + '%'">0%</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar"
+                                 th:style="'width: ' + ${T(java.lang.Math).min(stats.budgetUsagePercentage, 100.0)} + '%;'"
+                                 th:classappend="${stats.budgetUsagePercentage > 100 ? 'bg-danger' : (stats.budgetUsagePercentage > 80 ? 'bg-warning' : 'bg-success')}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                        <span class="small text-muted"><i class="bi bi-info-circle me-1"></i> Recorded grocery expenses this month</span>
+                        <a th:href="@{/expenses}" class="small text-success fw-semibold text-decoration-none">View Expenses &rarr;</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Shopping & Meals Overview Card -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-cart3 text-success me-2"></i> Shopping & Meal Schedules</span>
+                    <a th:href="@{/shopping-lists}" class="btn btn-sm btn-outline-secondary">Shopping Lists</a>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center mb-3">
+                        <div class="col-6 border-end">
+                            <div class="text-muted small">Upcoming Meals</div>
+                            <h5 class="fw-bold text-primary mt-1" th:text="${stats.upcomingMealsCount}">0</h5>
+                        </div>
+                        <div class="col-6">
+                            <div class="text-muted small">Estimated Shopping Cost</div>
+                            <h5 class="fw-bold text-warning mt-1" th:text="'₹' + ${stats.estimatedShoppingCost}">₹0</h5>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded border mb-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 fw-bold text-dark">Automated Shopping Generator</h6>
+                                <p class="small text-muted mb-0">Compute shortage from meal plans & low inventory</p>
+                            </div>
+                            <a th:href="@{/shopping-lists}" class="btn btn-sm btn-primary">Generate List</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Section: Active Alerts and Upcoming Meals -->
+    <div class="row g-4">
+        <!-- Active Alerts -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-bell text-danger me-2"></i> Active Alerts</span>
+                    <a th:href="@{/alerts}" class="small text-decoration-none">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(recentAlerts)}" class="p-4 text-center text-muted">
+                        <i class="bi bi-check2-circle text-success fs-1 d-block mb-2"></i>
+                        No active alerts. Inventory and budget are in great shape!
+                    </div>
+                    <ul th:unless="${#lists.isEmpty(recentAlerts)}" class="list-group list-group-flush">
+                        <li th:each="alert : ${recentAlerts}" class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div class="d-flex align-items-start">
+                                <span class="badge me-3 mt-1"
+                                      th:classappend="${alert.alertType == 'EXPIRED' ? 'bg-danger' : (alert.alertType == 'LOW_STOCK' ? 'bg-warning text-dark' : 'bg-info text-dark')}"
+                                      th:text="${alert.alertType}">ALERT</span>
+                                <div>
+                                    <div class="fw-semibold text-dark" th:text="${alert.message}">Alert message text</div>
+                                    <div class="text-muted small" th:text="${#temporals.format(alert.createdAt, 'dd MMM yyyy, HH:mm')}">Date</div>
+                                </div>
+                            </div>
+                            <form th:action="@{/alerts/{id}/resolve(id=${alert.id})}" method="post" class="ms-2">
+                                <button type="submit" class="btn btn-sm btn-outline-success" title="Mark Resolved">
+                                    <i class="bi bi-check-lg"></i>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Planned Meals -->
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold"><i class="bi bi-calendar-event text-primary me-2"></i> Upcoming Planned Meals</span>
+                    <a th:href="@{/meal-plans}" class="small text-decoration-none">Meal Planner</a>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(upcomingMeals)}" class="p-4 text-center text-muted">
+                        <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                        No upcoming meals planned. <a th:href="@{/meal-plans}" class="text-success fw-semibold">Plan meals now</a>.
+                    </div>
+                    <ul th:unless="${#lists.isEmpty(upcomingMeals)}" class="list-group list-group-flush">
+                        <li th:each="meal : ${upcomingMeals}" class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <span class="badge bg-light text-dark border me-2" th:text="${meal.mealType}">DINNER</span>
+                                <span class="fw-bold text-dark" th:text="${meal.recipe.name}">Recipe Name</span>
+                                <div class="text-muted small mt-1">
+                                    <i class="bi bi-calendar me-1"></i> <span th:text="${meal.plannedDate}">2026-10-10</span> &bull;
+                                    <i class="bi bi-people me-1"></i> <span th:text="${meal.servings} + ' servings'">2 servings</span>
+                                </div>
+                            </div>
+                            <div>
+                                <span th:if="${meal.preparationStatus == 'PREPARED'}" class="badge bg-success">PREPARED</span>
+                                <form th:if="${meal.preparationStatus == 'PLANNED'}"
+                                      th:action="@{/meal-plans/entry/{id}/prepare(id=${meal.id}, planId=${meal.mealPlan.id})}" method="post">
+                                    <button type="submit" class="btn btn-sm btn-outline-success" title="Confirm Preparation & Deduct Stock">
+                                        <i class="bi bi-check-circle me-1"></i> Cook
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

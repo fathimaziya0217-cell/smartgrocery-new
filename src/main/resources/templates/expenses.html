@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'expenses', ~{::content})}">
+<head>
+    <title>Expense Tracking - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Grocery Expense Tracking</h2>
+            <p class="text-muted mb-0">Record and track actual grocery spending for budget monitoring</p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+                <i class="bi bi-plus-lg me-1"></i> Record Expense
+            </button>
+        </div>
+    </div>
+
+    <!-- Month Filter & Monthly Total Bar -->
+    <div class="card mb-4 p-3 shadow-sm border-0">
+        <form th:action="@{/expenses}" method="get" class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select name="month" class="form-select" onchange="this.form.submit()">
+                    <option value="1" th:selected="${selectedMonth == 1}">January</option>
+                    <option value="2" th:selected="${selectedMonth == 2}">February</option>
+                    <option value="3" th:selected="${selectedMonth == 3}">March</option>
+                    <option value="4" th:selected="${selectedMonth == 4}">April</option>
+                    <option value="5" th:selected="${selectedMonth == 5}">May</option>
+                    <option value="6" th:selected="${selectedMonth == 6}">June</option>
+                    <option value="7" th:selected="${selectedMonth == 7}">July</option>
+                    <option value="8" th:selected="${selectedMonth == 8}">August</option>
+                    <option value="9" th:selected="${selectedMonth == 9}">September</option>
+                    <option value="10" th:selected="${selectedMonth == 10}">October</option>
+                    <option value="11" th:selected="${selectedMonth == 11}">November</option>
+                    <option value="12" th:selected="${selectedMonth == 12}">December</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="number" min="2020" max="2100" name="year" class="form-control" th:value="${selectedYear}" onchange="this.form.submit()">
+            </div>
+            <div class="col-md-5 text-end">
+                <div class="p-2 bg-light rounded text-center border">
+                    <span class="small text-muted d-block">Total Expenses This Month</span>
+                    <span class="fs-5 fw-bold text-danger" th:text="'₹' + ${totalMonthExpenses}">₹0.00</span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Expense Entries Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Description</th>
+                            <th>Amount (₹)</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(expenses)}">
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="bi bi-cash-stack fs-1 d-block mb-2 text-secondary"></i>
+                                No expenses recorded for this month. Click "Record Expense" to log grocery spending.
+                            </td>
+                        </tr>
+                        <tr th:each="exp : ${expenses}">
+                            <td class="ps-3 fw-semibold text-dark" th:text="${exp.expenseDate}">2026-10-10</td>
+                            <td>
+                                <div class="fw-bold text-dark" th:text="${exp.description}">Description</div>
+                                <small class="text-muted" th:if="${exp.shoppingListItem != null}">Linked to Shopping Item</small>
+                            </td>
+                            <td class="fw-bold text-danger" th:text="'₹' + ${exp.amount}">₹150.00</td>
+                            <td class="text-end pe-3">
+                                <form th:action="@{/expenses/delete/{id}(id=${exp.id})}" method="post" class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to delete this expense entry?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Record Grocery Expense</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/expenses/add}" th:object="${expenseDto}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Amount (₹) *</label>
+                            <input type="number" step="0.01" min="0.01" th:field="*{amount}" class="form-control" placeholder="e.g. 850.00" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Expense Date *</label>
+                            <input type="date" th:field="*{expenseDate}" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description *</label>
+                            <input type="text" th:field="*{description}" class="form-control" placeholder="e.g. Weekend grocery run at DMart" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-semibold">Save Expense</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

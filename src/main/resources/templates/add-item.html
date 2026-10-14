@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'inventory', ~{::content})}">
+<head>
+    <title>Add Grocery Item - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="fw-bold mb-0">Add New Grocery Item</h3>
+                <a th:href="@{/inventory}" class="btn btn-outline-secondary btn-sm">&larr; Back to Inventory</a>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form th:action="@{/inventory/add}" th:object="${itemDto}" method="post">
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-8">
+                                <label for="name" class="form-label fw-semibold">Item Name *</label>
+                                <input type="text" id="name" th:field="*{name}" class="form-control"
+                                       th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                       placeholder="e.g. Basmati Rice, Whole Milk, Tomatoes" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="categoryId" class="form-label fw-semibold">Category *</label>
+                                <select id="categoryId" th:field="*{categoryId}" class="form-select"
+                                        th:classappend="${#fields.hasErrors('categoryId')} ? 'is-invalid' : ''" required>
+                                    <option value="">Select Category</option>
+                                    <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}">Category</option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label for="unit" class="form-label fw-semibold">Measurement Unit *</label>
+                                <select id="unit" th:field="*{unit}" class="form-select" required>
+                                    <option value="kg">kg (Kilograms)</option>
+                                    <option value="g">g (Grams)</option>
+                                    <option value="litre">litre (Litres)</option>
+                                    <option value="ml">ml (Millilitres)</option>
+                                    <option value="piece">piece (Units/Count)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="minimumStock" class="form-label fw-semibold">Minimum Stock Alert Threshold *</label>
+                                <input type="number" step="0.01" min="0.00" id="minimumStock" th:field="*{minimumStock}"
+                                       class="form-control" placeholder="e.g. 1.0" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('minimumStock')}" th:errors="*{minimumStock}"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="estimatedUnitPrice" class="form-label fw-semibold">Estimated Unit Price (₹) *</label>
+                                <input type="number" step="0.01" min="0.00" id="estimatedUnitPrice" th:field="*{estimatedUnitPrice}"
+                                       class="form-control" placeholder="e.g. 80.00" required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('estimatedUnitPrice')}" th:errors="*{estimatedUnitPrice}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="notes" class="form-label fw-semibold">Notes / Brand Preferences</label>
+                            <input type="text" id="notes" th:field="*{notes}" class="form-control" placeholder="e.g. Organic, low sodium, preferred brand">
+                        </div>
+
+                        <!-- Optional Initial Stock Batch -->
+                        <div class="p-3 bg-light rounded border mb-4">
+                            <h6 class="fw-bold text-success mb-2"><i class="bi bi-box me-1"></i> Optional Initial Stock</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="initialQuantity" class="form-label">Initial Quantity Available</label>
+                                    <input type="number" step="0.01" min="0.00" id="initialQuantity" th:field="*{initialQuantity}"
+                                           class="form-control" placeholder="0.00">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="initialExpiryDate" class="form-label">Expiration Date</label>
+                                    <input type="date" id="initialExpiryDate" th:field="*{initialExpiryDate}" class="form-control">
+                                    <small class="text-muted">Leave blank if non-perishable.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a th:href="@{/inventory}" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary px-4 fw-semibold">Save Grocery Item</button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'settings', ~{::content})}">
+<head>
+    <title>Settings - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1">User Settings & Preferences</h2>
+            <p class="text-muted mb-0">Account details and system configuration parameters</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- User Profile Card -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-person-circle text-success me-2"></i> User Profile
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">FULL NAME</label>
+                        <div class="fw-bold text-dark fs-5" th:text="${user.fullName}">Demo User</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">EMAIL ADDRESS</label>
+                        <div class="fw-bold text-dark fs-5" th:text="${user.email}">demo@grocery.com</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">ACCOUNT CREATED</label>
+                        <div class="text-secondary" th:text="${#temporals.format(user.createdAt, 'dd MMMM yyyy, HH:mm')}">Date</div>
+                    </div>
+                    <div class="p-3 bg-light rounded border text-muted small">
+                        <i class="bi bi-shield-lock-fill text-success me-1"></i> Passwords are salted and hashed using BCrypt. Direct object references are strictly isolated per user.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Parameters Card -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-white fw-bold">
+                    <i class="bi bi-sliders text-primary me-2"></i> System Parameters
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Near-Expiry Threshold</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" th:value="${nearExpiryDays} + ' Days'" disabled>
+                            <span class="input-group-text bg-light text-muted">Configured via app.alerts.near-expiry-days</span>
+                        </div>
+                        <small class="text-muted">Batches expiring within this window automatically generate near-expiry alerts.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Connected Database Engine</label>
+                        <div class="p-3 bg-light rounded border">
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="badge bg-success me-2">MySQL 8.x</span>
+                                <span class="fw-semibold text-dark">smart_grocery_db</span>
+                            </div>
+                            <small class="text-muted d-block">Automatic Flyway migrations handle table versioning and indexes.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

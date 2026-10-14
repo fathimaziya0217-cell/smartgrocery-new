@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'reports', ~{::content})}">
+<head>
+    <title>Reports & Export - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Inventory & Expense Reports</h2>
+            <p class="text-muted mb-0">Audit reports, expiration alerts, and tabular data exports</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-secondary">
+                <i class="bi bi-printer me-1"></i> Print Report
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-download me-1"></i> Export Data
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                        <a class="dropdown-item" th:href="@{/reports/export/inventory-csv}">
+                            <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i> Inventory CSV
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" th:href="@{/reports/export/expenses-csv}">
+                            <i class="bi bi-file-earmark-spreadsheet me-2 text-primary"></i> Monthly Expenses CSV
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Items Report Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Low Stock Items Audit</span>
+            <span class="badge bg-warning text-dark" th:text="${#lists.size(lowStockItems)} + ' items'">0 items</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Item Name</th>
+                            <th>Category</th>
+                            <th>Current Usable Stock</th>
+                            <th>Minimum Threshold</th>
+                            <th>Estimated Unit Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(lowStockItems)}">
+                            <td colspan="5" class="text-center py-4 text-muted">No items are currently below minimum stock threshold.</td>
+                        </tr>
+                        <tr th:each="item : ${lowStockItems}">
+                            <td class="ps-3 fw-bold text-dark" th:text="${item.name}">Name</td>
+                            <td><span class="badge bg-light text-dark border" th:text="${item.category.name}">Category</span></td>
+                            <td class="fw-bold text-danger" th:text="${usableStockMap.get(item.id)} + ' ' + ${item.unit}">0.50 kg</td>
+                            <td th:text="${item.minimumStock} + ' ' + ${item.unit}">1.00 kg</td>
+                            <td th:text="'₹' + ${item.estimatedUnitPrice}">₹40.00</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Near Expiry Batches Report Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-clock-history text-primary me-2"></i> Batches Expiring in Next <span th:text="${nearExpiryDays}">7</span> Days</span>
+            <span class="badge bg-info text-dark" th:text="${#lists.size(nearExpiryBatches)} + ' batches'">0 batches</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Batch ID</th>
+                            <th>Item Name</th>
+                            <th>Quantity Remaining</th>
+                            <th>Purchase Date</th>
+                            <th>Expiry Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(nearExpiryBatches)}">
+                            <td colspan="5" class="text-center py-4 text-muted">No batches are nearing expiration within this threshold.</td>
+                        </tr>
+                        <tr th:each="batch : ${nearExpiryBatches}">
+                            <td class="ps-3 fw-bold text-secondary" th:text="'#' + ${batch.id}">#1</td>
+                            <td class="fw-bold text-dark" th:text="${batch.groceryItem.name}">Whole Milk</td>
+                            <td class="fw-semibold text-warning" th:text="${batch.quantityRemaining} + ' ' + ${batch.groceryItem.unit}">0.50 litre</td>
+                            <td th:text="${batch.purchaseDate}">2026-10-07</td>
+                            <td class="fw-bold text-danger" th:text="${batch.expiryDate}">2026-10-12</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expired Batches Report Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-x-circle-fill text-danger me-2"></i> Expired Inventory Batches (Needs Disposal)</span>
+            <span class="badge bg-danger" th:text="${#lists.size(expiredBatches)} + ' expired'">0 expired</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Batch ID</th>
+                            <th>Item Name</th>
+                            <th>Expired Quantity</th>
+                            <th>Purchase Date</th>
+                            <th>Expired On</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(expiredBatches)}">
+                            <td colspan="5" class="text-center py-4 text-muted">No expired batches found. Excellent stock management!</td>
+                        </tr>
+                        <tr th:each="batch : ${expiredBatches}">
+                            <td class="ps-3 fw-bold text-secondary" th:text="'#' + ${batch.id}">#4</td>
+                            <td class="fw-bold text-dark" th:text="${batch.groceryItem.name}">Whole Wheat Bread</td>
+                            <td class="fw-semibold text-danger" th:text="${batch.quantityRemaining} + ' ' + ${batch.groceryItem.unit}">1.00 piece</td>
+                            <td th:text="${batch.purchaseDate}">2026-09-30</td>
+                            <td class="fw-bold text-danger" th:text="${batch.expiryDate}">2026-10-08</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

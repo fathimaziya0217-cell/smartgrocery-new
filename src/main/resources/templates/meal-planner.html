@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'meal-plans', ~{::content})}">
+<head>
+    <title>Weekly Meal Planner - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Weekly Meal Planner</h2>
+            <p class="text-muted mb-0">Plan household meals and automatically verify ingredient availability</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#newPlanModal">
+                <i class="bi bi-calendar-plus me-1"></i> New Plan
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMealEntryModal"
+                    th:disabled="${selectedPlan == null}">
+                <i class="bi bi-plus-lg me-1"></i> Schedule Meal
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Plan Selection Bar -->
+    <div class="card mb-4 p-3 shadow-sm border-0">
+        <form th:action="@{/meal-plans}" method="get" class="row g-2 align-items-center">
+            <div class="col-md-8">
+                <select name="planId" class="form-select" onchange="this.form.submit()">
+                    <option th:if="${#lists.isEmpty(mealPlans)}" value="">No meal plans found</option>
+                    <option th:each="plan : ${mealPlans}"
+                            th:value="${plan.id}"
+                            th:text="${plan.name} + ' (' + ${plan.weekStartDate} + ' to ' + ${plan.weekEndDate} + ')'"
+                            th:selected="${selectedPlan != null && selectedPlan.id == plan.id}">Plan</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex justify-content-end">
+                <a th:href="@{/shopping-lists}" class="btn btn-accent w-100">
+                    <i class="bi bi-cart-plus me-1"></i> Generate Shopping List From Plan
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Scheduled Meals Table -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span class="fw-bold" th:if="${selectedPlan != null}">
+                <i class="bi bi-calendar-check text-success me-2"></i>
+                <span th:text="${selectedPlan.name}">Weekly Plan</span>
+                <span class="badge bg-light text-muted border ms-2"
+                      th:text="${selectedPlan.weekStartDate} + ' to ' + ${selectedPlan.weekEndDate}">Dates</span>
+            </span>
+            <span class="fw-bold" th:unless="${selectedPlan != null}">Weekly Schedule</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Meal Type</th>
+                            <th>Recipe</th>
+                            <th>Servings</th>
+                            <th>Status</th>
+                            <th class="text-end pe-3">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${selectedPlan == null || selectedPlan.entries == null || #lists.isEmpty(selectedPlan.entries)}">
+                            <td colspan="6" class="text-center py-5 text-muted">
+                                <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+                                No meals scheduled in this plan. Click "Schedule Meal" to add breakfast, lunch, dinner, or snacks!
+                            </td>
+                        </tr>
+                        <th:block th:if="${selectedPlan != null && selectedPlan.entries != null}">
+                            <tr th:each="entry : ${selectedPlan.entries}">
+                                <td class="ps-3 fw-semibold text-dark" th:text="${entry.plannedDate}">2026-10-10</td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${entry.mealType == 'BREAKFAST' ? 'bg-info text-dark' : (entry.mealType == 'LUNCH' ? 'bg-primary' : (entry.mealType == 'DINNER' ? 'bg-dark' : 'bg-secondary'))}"
+                                          th:text="${entry.mealType}">DINNER</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${entry.recipe.name}">Recipe Name</div>
+                                    <small class="text-muted" th:text="${#lists.size(entry.recipe.ingredients)} + ' ingredients'">4 ingredients</small>
+                                </td>
+                                <td th:text="${entry.servings} + ' servings'">4 servings</td>
+                                <td>
+                                    <span th:if="${entry.preparationStatus == 'PREPARED'}" class="badge bg-success">
+                                        <i class="bi bi-check-circle me-1"></i> Prepared
+                                    </span>
+                                    <span th:if="${entry.preparationStatus == 'PLANNED'}" class="badge bg-warning text-dark">
+                                        <i class="bi bi-clock me-1"></i> Planned
+                                    </span>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="btn-group btn-group-sm">
+                                        <!-- Explicit Confirmation Action: Deduct stock only when clicked -->
+                                        <form th:if="${entry.preparationStatus == 'PLANNED'}"
+                                              th:action="@{/meal-plans/entry/{id}/prepare(id=${entry.id}, planId=${selectedPlan.id})}" method="post"
+                                              onsubmit="return confirm('Confirm preparation of this meal? Ingredients will be deducted from your earliest expiring inventory batches.');">
+                                            <button type="submit" class="btn btn-outline-success me-1" title="Confirm Preparation & Deduct Stock">
+                                                <i class="bi bi-check2-circle me-1"></i> Cook
+                                            </button>
+                                        </form>
+
+                                        <form th:action="@{/meal-plans/entry/{id}/delete(id=${entry.id}, planId=${selectedPlan.id})}" method="post"
+                                              onsubmit="return confirm('Remove this meal from schedule?');">
+                                            <button type="submit" class="btn btn-outline-danger" title="Remove Meal">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </th:block>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Plan Modal -->
+    <div class="modal fade" id="newPlanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create Weekly Meal Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/meal-plans/add}" th:object="${newPlanDto}" method="post">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Plan Name *</label>
+                            <input type="text" th:field="*{name}" class="form-control" placeholder="e.g. Next Week Healthy Plan" required>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Week Start Date *</label>
+                                <input type="date" th:field="*{weekStartDate}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Week End Date *</label>
+                                <input type="date" th:field="*{weekEndDate}" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-success fw-semibold">Create Plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Meal Entry Modal -->
+    <div class="modal fade" id="addMealEntryModal" tabindex="-1" aria-hidden="true" th:if="${selectedPlan != null}">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Schedule Meal</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/meal-plans/entry/add}" th:object="${newEntryDto}" method="post">
+                    <input type="hidden" name="mealPlanId" th:value="${selectedPlan.id}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Recipe *</label>
+                            <select th:field="*{recipeId}" class="form-select" required>
+                                <option value="">Select Recipe</option>
+                                <option th:each="r : ${recipes}" th:value="${r.id}"
+                                        th:text="${r.name} + ' (Default: ' + ${r.defaultServings} + ' servings)'">Recipe</option>
+                            </select>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Planned Date *</label>
+                                <input type="date" th:field="*{plannedDate}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Meal Type *</label>
+                                <select th:field="*{mealType}" class="form-select" required>
+                                    <option value="BREAKFAST">Breakfast</option>
+                                    <option value="LUNCH">Lunch</option>
+                                    <option value="DINNER" selected>Dinner</option>
+                                    <option value="SNACK">Snack</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Servings Required *</label>
+                            <input type="number" min="1" max="50" th:field="*{servings}" class="form-control" value="2" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-semibold">Add to Schedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

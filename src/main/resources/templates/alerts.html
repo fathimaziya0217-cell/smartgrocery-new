@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(~{::title}, 'alerts', ~{::content})}">
+<head>
+    <title>Alerts & Warnings - Smart Grocery Inventory</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Inventory & Budget Alerts</h2>
+            <p class="text-muted mb-0">Automated notifications for low stock, near expiry, expired batches, and budget limits</p>
+        </div>
+        <div>
+            <form th:action="@{/alerts/refresh}" method="post">
+                <button type="submit" class="btn btn-outline-success">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Refresh Alerts
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Active Alerts Card -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i> Active Unresolved Alerts</span>
+            <span class="badge bg-danger" th:text="${#lists.size(activeAlerts)} + ' active'">0 active</span>
+        </div>
+        <div class="card-body p-0">
+            <div th:if="${#lists.isEmpty(activeAlerts)}" class="p-5 text-center text-muted">
+                <i class="bi bi-check-circle-fill text-success fs-1 d-block mb-2"></i>
+                No active alerts! All items have adequate stock, no upcoming expiries, and budget is balanced.
+            </div>
+            <ul th:unless="${#lists.isEmpty(activeAlerts)}" class="list-group list-group-flush">
+                <li th:each="alert : ${activeAlerts}" class="list-group-item d-flex justify-content-between align-items-center p-3">
+                    <div class="d-flex align-items-start">
+                        <span class="badge me-3 mt-1"
+                              th:classappend="${alert.alertType == 'EXPIRED' ? 'bg-danger' : (alert.alertType == 'LOW_STOCK' ? 'bg-warning text-dark' : (alert.alertType == 'BUDGET_WARNING' ? 'bg-danger' : 'bg-info text-dark'))}"
+                              th:text="${alert.alertType}">TYPE</span>
+                        <div>
+                            <div class="fw-semibold text-dark" th:text="${alert.message}">Message</div>
+                            <div class="text-muted small">
+                                <i class="bi bi-clock me-1"></i> <span th:text="${#temporals.format(alert.createdAt, 'dd MMM yyyy, HH:mm')}">Date</span>
+                                <span th:if="${alert.groceryItem != null}" class="ms-2">
+                                    &bull; Category: <span class="fw-semibold" th:text="${alert.groceryItem.category.name}">Category</span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <form th:action="@{/alerts/{id}/resolve(id=${alert.id})}" method="post">
+                            <button type="submit" class="btn btn-sm btn-success" title="Mark as Resolved">
+                                <i class="bi bi-check-lg me-1"></i> Resolve
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Historical / All Alerts Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold">
+            <i class="bi bi-archive text-secondary me-2"></i> Alert History Log
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Type</th>
+                            <th>Alert Message</th>
+                            <th>Generated At</th>
+                            <th class="text-end pe-3">Resolution Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(allAlerts)}">
+                            <td colspan="4" class="text-center py-4 text-muted">No historical alerts recorded.</td>
+                        </tr>
+                        <tr th:each="al : ${allAlerts}">
+                            <td class="ps-3">
+                                <span class="badge"
+                                      th:classappend="${al.alertType == 'EXPIRED' ? 'bg-danger' : (al.alertType == 'LOW_STOCK' ? 'bg-warning text-dark' : 'bg-secondary')}"
+                                      th:text="${al.alertType}">TYPE</span>
+                            </td>
+                            <td class="text-dark" th:text="${al.message}">Message</td>
+                            <td class="text-muted small" th:text="${#temporals.format(al.createdAt, 'dd MMM yyyy, HH:mm')}">Date</td>
+                            <td class="text-end pe-3">
+                                <span th:if="${al.resolved}" class="badge bg-success">Resolved</span>
+                                <span th:unless="${al.resolved}" class="badge bg-warning text-dark">Active</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

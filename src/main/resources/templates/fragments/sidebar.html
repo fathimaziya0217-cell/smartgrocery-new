@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="sidebar(activePage)" class="sidebar p-2">
+    <ul class="nav nav-pills flex-column mb-auto">
+        <li class="nav-item">
+            <a th:href="@{/dashboard}" class="nav-link" th:classappend="${activePage == 'dashboard'} ? 'active' : ''">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/inventory}" class="nav-link" th:classappend="${activePage == 'inventory'} ? 'active' : ''">
+                <i class="bi bi-box-seam"></i> Inventory
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/categories}" class="nav-link" th:classappend="${activePage == 'categories'} ? 'active' : ''">
+                <i class="bi bi-tags"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/recipes}" class="nav-link" th:classappend="${activePage == 'recipes'} ? 'active' : ''">
+                <i class="bi bi-journal-text"></i> Recipes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/meal-plans}" class="nav-link" th:classappend="${activePage == 'meal-plans'} ? 'active' : ''">
+                <i class="bi bi-calendar-week"></i> Meal Planner
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/shopping-lists}" class="nav-link" th:classappend="${activePage == 'shopping-lists'} ? 'active' : ''">
+                <i class="bi bi-card-checklist"></i> Shopping Lists
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/budgets}" class="nav-link" th:classappend="${activePage == 'budgets'} ? 'active' : ''">
+                <i class="bi bi-wallet2"></i> Monthly Budget
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/expenses}" class="nav-link" th:classappend="${activePage == 'expenses'} ? 'active' : ''">
+                <i class="bi bi-cash-stack"></i> Expenses
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/alerts}" class="nav-link" th:classappend="${activePage == 'alerts'} ? 'active' : ''">
+                <i class="bi bi-bell"></i> Alerts & Warnings
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/scanning}" class="nav-link" th:classappend="${activePage == 'scanning'} ? 'active' : ''">
+                <i class="bi bi-upc-scan"></i> Barcode & Receipt
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/reports}" class="nav-link" th:classappend="${activePage == 'reports'} ? 'active' : ''">
+                <i class="bi bi-graph-up"></i> Reports & Export
+            </a>
+        </li>
+        <li class="nav-item">
+            <a th:href="@{/settings}" class="nav-link" th:classappend="${activePage == 'settings'} ? 'active' : ''">
+                <i class="bi bi-gear"></i> Settings
+            </a>
+        </li>
+    </ul>
+
+    <div class="mt-auto p-3 bg-light rounded text-center small text-muted border">
+        <i class="bi bi-shield-check text-success me-1"></i> Data Protection Active
+    </div>
+</div>
+</body>
+</html>
